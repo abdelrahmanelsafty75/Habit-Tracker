@@ -1,10 +1,18 @@
 import HabitItem from "./HabitItem.tsx"
 
-function HabitList() {
-  const habits = [
-    {id: "a", name: "Gym"},
-    {id: "b", name: "Football"}
-  ];
+export type Habit = {
+   id: string, 
+   name: string,
+   completions: Date[]
+  }
+
+type HabitListProps = { 
+  habits: Habit[]
+  deleteHabit: (id: string) => void
+  toggleHabit: (id: string, date: Date) => void 
+ }
+
+function HabitList({habits, deleteHabit, toggleHabit}: HabitListProps) {
 
   if(habits.length === 0)
     return(
@@ -16,7 +24,7 @@ function HabitList() {
     <div className="flex flex-col gap-3 font-bold mt-8">
 
       {habits.map(habit => (
-          <HabitItem key="habit.id" habit={habit}/>
+          <HabitItem deleteHabit={deleteHabit} toggleHabit={toggleHabit} key="habit.id" habit={habit}/>
         ))}
     
     </div>
