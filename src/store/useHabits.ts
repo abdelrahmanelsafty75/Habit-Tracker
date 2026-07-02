@@ -1,5 +1,5 @@
 import { create } from "zustand"
-import { isSameDay } from "date-fns"
+import { addWeeks, endOfWeek, isSameDay, startOfWeek } from "date-fns"
 
 export type Habit = {
   id: string
@@ -7,15 +7,24 @@ export type Habit = {
   completions: Date[]
 }
 
+export function getWeekRange(weekOffset: number) {
+  const date = addWeeks(new Date(), weekOffset)
+  return { start: startOfWeek(date), end: endOfWeek(date) }
+}
+
 type HabitsState = {
   habits: Habit[]
+  weekOffset: number
   addHabit: (name: string) => void
   deleteHabit: (id: string) => void
   toggleHabit: (id: string, date: Date) => void
+  prevWeek: () => void
+  nextWeek: () => void
 }
 
 export const useHabits = create<HabitsState>((set) => ({
   habits: [],
+  weekOffset: 0,
 
   addHabit: (name) =>
     set((state) => ({
@@ -43,4 +52,8 @@ export const useHabits = create<HabitsState>((set) => ({
         return { ...h, completions }
       }),
     })),
+
+  prevWeek: () => set((state) => ({ weekOffset: state.weekOffset - 1 })),
+
+  nextWeek: () => set((state) => ({ weekOffset: state.weekOffset + 1 })),
 }))

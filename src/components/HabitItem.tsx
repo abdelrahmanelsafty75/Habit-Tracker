@@ -1,15 +1,7 @@
 import Button from "./Button.tsx"
-import {
-  eachDayOfInterval,
-  endOfWeek,
-  format,
-  isFuture,
-  isSameDay,
-  startOfWeek,
-  subDays,
-} from "date-fns"
+import { eachDayOfInterval, format, isFuture, isSameDay, subDays } from "date-fns"
 import type { Habit } from "../store/useHabits.ts"
-import { useHabits } from "../store/useHabits.ts"
+import { getWeekRange, useHabits } from "../store/useHabits.ts"
 
 type HabitItemProps = {
   habit: Habit
@@ -18,11 +10,10 @@ type HabitItemProps = {
 function HabitItem({ habit }: HabitItemProps) {
   const deleteHabit = useHabits((state) => state.deleteHabit)
   const toggleHabit = useHabits((state) => state.toggleHabit)
+  const weekOffset = useHabits((state) => state.weekOffset)
 
-  const visibleDates = eachDayOfInterval({
-    start: startOfWeek(new Date()),
-    end: endOfWeek(new Date()),
-  })
+  const { start, end } = getWeekRange(weekOffset)
+  const visibleDates = eachDayOfInterval({ start, end })
 
   const streak = getStreak(habit.completions)
 
