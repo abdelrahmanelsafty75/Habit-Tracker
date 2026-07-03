@@ -1,5 +1,6 @@
 import { create } from "zustand"
-import { addWeeks, endOfWeek, isSameDay, startOfWeek } from "date-fns"
+import { persist, createJSONStorage } from "zustand/middleware"
+import { addWeeks, endOfWeek, isSameDay, startOfWeek, parseISO } from "date-fns"
 
 export type Habit = {
   id: string
@@ -22,38 +23,56 @@ type HabitsState = {
   nextWeek: () => void
 }
 
-export const useHabits = create<HabitsState>((set) => ({
-  habits: [],
-  weekOffset: 0,
+function dateReviver(_key: string, value: unknown) {
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}T/.test(value)) {
+    return parseISO(value)
+  }
+  return value
+}
 
-  addHabit: (name) =>
-    set((state) => ({
-      habits: [
-        ...state.habits,
-        { id: crypto.randomUUID(), name, completions: [] },
-      ],
-    })),
+export const useHabits = create<HabitsState>()(
+  persist(
+    (set) => ({
+      habits: [],
+      weekOffset: 0,
 
-  deleteHabit: (id) =>
-    set((state) => ({
-      habits: state.habits.filter((h) => h.id !== id),
-    })),
+      addHabit: (name) =>
+        set((state) => ({
+          habits: [
+            ...state.habits,
+            { id: crypto.randomUUID(), name, completions: [] },
+          ],
+        })),
 
-  toggleHabit: (id, date) =>
-    set((state) => ({
-      habits: state.habits.map((h) => {
-        if (h.id !== id) return h
+      deleteHabit: (id) =>
+        set((state) => ({
+          habits: state.habits.filter((h) => h.id !== id),
+        })),
 
-        const alreadyDone = h.completions.some((c) => isSameDay(c, date))
-        const completions = alreadyDone
-          ? h.completions.filter((c) => !isSameDay(c, date))
-          : [...h.completions, date]
+      toggleHabit: (id, date) =>
+        set((state) => ({
+          habits: state.habits.map((h) => {
+            if (h.id !== id) return h
 
-        return { ...h, completions }
-      }),
-    })),
+            const alreadyDone = h.completions.some((c) => isSameDay(c, date))
+            const completions = alreadyDone
+              ? h.completions.filter((c) => !isSameDay(c, date))
+              : [...h.completions, date]
 
-  prevWeek: () => set((state) => ({ weekOffset: state.weekOffset - 1 })),
+            return { ...h, completions }
+          }),
+        })),
 
-  nextWeek: () => set((state) => ({ weekOffset: state.weekOffset + 1 })),
-}))
+      prevWeek: () => set((state) => ({ weekOffset: state.weekOffset - 1 })),
+
+      nextWeek: () => set((state) => ({ weekOffset: state.weekOffset + 1 })),
+    }),
+    {
+      name: "habit-tracker-storage", // The key used in Local Storage
+      
+      storage: createJSONStorage(() => localStorage, { reviver: dateReviver }),
+      
+      partialize: (state) => ({ habits: state.habits }),
+    }
+  )
+)
